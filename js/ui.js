@@ -237,7 +237,7 @@ function baixarTexto(texto) {
   document.body.append(link);
   link.click();
   link.remove();
-  URL.revokeObjectURL(url);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 // O texto só é montado aqui, no clique.
@@ -247,18 +247,26 @@ async function copiarLog() {
     aviso.textContent = 'Nada para copiar ainda: execute ao menos uma iteração.';
     return;
   }
-  const texto = textoExecucao(app.eventosPorIteracao, app.parametros.vertices);
-  if (deveBaixar(texto)) {
-    baixarTexto(texto);
-    aviso.textContent = 'Log grande: baixado como arquivo .txt';
-    return;
-  }
+  const botao = $('btn-copiar-log');
+  botao.disabled = true;
+  aviso.textContent = 'Gerando log…';
+  await new Promise((r) => setTimeout(r, 0)); // deixa a mensagem aparecer antes de montar o texto
   try {
-    await navigator.clipboard.writeText(texto);
-    aviso.textContent = 'Log copiado';
-  } catch (erro) {
-    baixarTexto(texto);
-    aviso.textContent = 'Não foi possível copiar: baixado como arquivo .txt';
+    const texto = textoExecucao(app.eventosPorIteracao, app.parametros.vertices);
+    if (deveBaixar(texto)) {
+      baixarTexto(texto);
+      aviso.textContent = 'Log grande: baixado como arquivo .txt';
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(texto);
+      aviso.textContent = 'Log copiado';
+    } catch (erro) {
+      baixarTexto(texto);
+      aviso.textContent = 'Não foi possível copiar: baixado como arquivo .txt';
+    }
+  } finally {
+    botao.disabled = false;
   }
 }
 

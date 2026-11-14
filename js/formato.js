@@ -1,6 +1,11 @@
 // js/formato.js — padrão do grupo: formatação pt-BR só na exibição
+// Um formatador por número de casas, criado uma vez só (criar um a cada número é lento).
+const formatadores = {};
 export function formatarDecimal(x, casas = 2) {
-  return x.toLocaleString('pt-BR', { minimumFractionDigits: casas, maximumFractionDigits: casas });
+  if (!formatadores[casas]) {
+    formatadores[casas] = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: casas, maximumFractionDigits: casas });
+  }
+  return formatadores[casas].format(x);
 }
 
 // Distância na tela: 2 casas; null (ainda não calculada) vira traço.
