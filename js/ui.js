@@ -6,7 +6,8 @@ import { CENARIO_INICIAL, INSTANCIA_TESTE, lerConfiguracao, proximoId, depositoV
 import { botoesPorEstado, textoStatus, modoAposEdicao } from './estados.js';
 import { desenharGrafo, desenharHistorico } from './graficos.js';
 import { atualizarReferencia } from './escala.js';
-import { formatarDistancia } from './formato.js';
+import { formatarDistancia, formatarDecimal, formatarRota } from './formato.js';
+import { resumoIteracao, textoExecucao, deveBaixar } from './log.js';
 
 const MIN_VERTICES = 4;
 const MAX_VERTICES = 12;
@@ -67,8 +68,199 @@ function atualizarMetricasEHistorico(app) {
   historicoMostrado.linhas = hist.length;
   desenharHistorico(hist);
 }
-function registrarEventos(app, eventos) {}
-function limparLogs() {}
+
+// ---------- Logs por iteração e abas ----------
+
+// O <details> mais recente de cada log (o único que fica aberto).
+const ultimoLog = { c: null, f: null };
+
+function abaAtiva() {
+  const a = document.querySelector('.aba.ativa');
+  return a ? a.dataset.a : 'h';
+}
+
+function elemento(tag, classe, texto) {
+  const e = document.createElement(tag);
+  if (classe) e.className = classe;
+  if (texto !== undefined) e.textContent = texto;
+  return e;
+}
+
+// Conteúdo de uma formiga: um parágrafo por passo, probabilidades como etiquetas.
+function montarFormiga(corpo, ev, vertices) {
+  for (const e of ev.escolhas) {
+    const p = elemento('p');
+    if (e.retorno) {
+      p.textContent = 'volta ao depósito ' + vertices[ev.rota[0]].id;
+      corpo.append(p);
+      continue;
+    }
+    p.append('em ' + vertices[e.atual].id + ': ');
+    const etiquetas = elemento('span', 'prob');
+    for (const c of e.candidatos) {
+      const sp = elemento('span', c.vertice === e.escolhido ? 'esc' : '',
+        vertices[c.vertice].id + ' ' + formatarDecimal(c.probabilidade, 3));
+      etiquetas.append(sp);
+    }
+    p.append(etiquetas, ' → escolheu ' + vertices[e.escolhido].id);
+    corpo.append(p);
+  }
+  corpo.append(elemento('p', 'mono', 'rota ' + formatarRota(ev.rota, vertices) +
+    ', comprimento ' + formatarDistancia(ev.comprimento)));
+}
+
+// Conteúdo da iteração na aba Construção: um sub-<details> por formiga, também montado só ao abrir.
+function montarConstrucao(corpo, eventos, vertices) {
+  for (const ev of eventos) {
+    if (ev.tipo !== 'formiga') continue;
+    const sub = elemento('details');
+    sub.append(elemento('summary', '', 'Formiga ' + ev.formiga + ' — comprimento ' + formatarDistancia(ev.comprimento)));
+    sub.addEventListener('toggle', () => {
+      if (sub.open && sub.children.length === 1) {
+        const c = elemento('div', 'log');
+        montarFormiga(c, ev, vertices);
+        sub.append(c);
+      } else if (!sub.open && sub.children.length > 1) {
+        sub.removeChild(sub.lastChild);
+      }
+    });
+    corpo.append(sub);
+  }
+}
+
+// Tabela Aresta · Anterior · Após evaporação · Depósito · Final.
+function montarFeromonio(corpo, eventos, vertices) {
+  const tabela = elemento('table', 'tabela-hist');
+  const cab = document.createElement('tr');
+  for (const t of ['Aresta', 'Anterior', 'Após evaporação', 'Depósito', 'Final']) cab.append(elemento('th', '', t));
+  const thead = document.createElement('thead');
+  thead.append(cab);
+  const tbody = document.createElement('tbody');
+  for (const ev of eventos) {
+    if (ev.tipo !== 'feromonio') continue;
+    for (const d of ev.detalhes) {
+      const tr = document.createElement('tr');
+      tr.append(
+        celula(vertices[d.i].id + '–' + vertices[d.j].id),
+        celula(formatarDecimal(d.anterior, 4)),
+        celula(formatarDecimal(d.aposEvaporacao, 4)),
+        celula(formatarDecimal(d.deposito, 4)),
+        celula(formatarDecimal(d.final, 4))
+      );
+      tbody.append(tr);
+    }
+  }
+  tabela.append(thead, tbody);
+  corpo.append(tabela);
+}
+
+// Monta o conteúdo do <details> se ele está aberto e a aba dele está à mostra.
+function montarSeAberto(det) {
+  if (!det.open || det.dataset.montado === 'sim' || abaAtiva() !== det.dataset.aba) return;
+  const corpo = elemento('div', 'log');
+  if (det.dataset.aba === 'c') montarConstrucao(corpo, det._eventos, det._vertices);
+  else montarFeromonio(corpo, det._eventos, det._vertices);
+  det.append(corpo);
+  det.dataset.montado = 'sim';
+}
+
+// Desmonta o conteúdo (some da página) quando o painel fecha.
+function desmontar(det) {
+  if (det.dataset.montado !== 'sim') return;
+  det.removeChild(det.lastChild);
+  det.dataset.montado = 'nao';
+}
+
+function criarDetalhes(aba, titulo, eventos, vertices) {
+  const det = elemento('details');
+  det.dataset.aba = aba;
+  det.dataset.montado = 'nao';
+  det._eventos = eventos;
+  det._vertices = vertices;
+  det.append(elemento('summary', '', titulo));
+  det.addEventListener('toggle', () => {
+    if (det.open) montarSeAberto(det);
+    else desmontar(det);
+  });
+  return det;
+}
+
+// Cria os painéis da iteração (o novo abre, o anterior fecha). O armazenamento dos eventos
+// em app.eventosPorIteracao é feito em avancarUma, uma única vez por iteração.
+function registrarEventos(app, eventos) {
+  const vertices = app.parametros.vertices;
+  const titulo = resumoIteracao(eventos);
+  const novos = {
+    c: criarDetalhes('c', titulo, eventos, vertices),
+    f: criarDetalhes('f', titulo.replace(/ — .*/, '') + ' — atualização do feromônio', eventos, vertices)
+  };
+  const destinos = { c: $('log-construcao'), f: $('log-feromonio') };
+  for (const aba of ['c', 'f']) {
+    const anterior = ultimoLog[aba];
+    if (anterior) {
+      anterior.open = false;
+      desmontar(anterior);
+    }
+    destinos[aba].prepend(novos[aba]);
+    novos[aba].open = true;
+    montarSeAberto(novos[aba]);
+    ultimoLog[aba] = novos[aba];
+  }
+}
+
+function limparLogs() {
+  $('log-construcao').innerHTML = '';
+  $('log-feromonio').innerHTML = '';
+  ultimoLog.c = null;
+  ultimoLog.f = null;
+  $('aviso-log').textContent = '';
+}
+
+function trocarAba(a) {
+  for (const b of document.querySelectorAll('.aba')) {
+    const ativa = b.dataset.a === a;
+    b.classList.toggle('ativa', ativa);
+    b.setAttribute('aria-selected', ativa ? 'true' : 'false');
+    b.tabIndex = ativa ? 0 : -1;
+    $('ab-' + b.dataset.a).classList.toggle('ativa', ativa);
+  }
+  // O painel mais recente só foi montado se sua aba estava à mostra; monta agora.
+  if (ultimoLog[a]) montarSeAberto(ultimoLog[a]);
+  if (a === 'h') desenharHistorico(app.estado.historico);
+}
+
+function baixarTexto(texto) {
+  const url = URL.createObjectURL(new Blob([texto], { type: 'text/plain;charset=utf-8' }));
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'log-colonia-formigas.txt';
+  document.body.append(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+// O texto só é montado aqui, no clique.
+async function copiarLog() {
+  const aviso = $('aviso-log');
+  if (app.eventosPorIteracao.length === 0) {
+    aviso.textContent = 'Nada para copiar ainda: execute ao menos uma iteração.';
+    return;
+  }
+  const texto = textoExecucao(app.eventosPorIteracao, app.parametros.vertices);
+  if (deveBaixar(texto)) {
+    baixarTexto(texto);
+    aviso.textContent = 'Log grande: baixado como arquivo .txt';
+    return;
+  }
+  try {
+    await navigator.clipboard.writeText(texto);
+    aviso.textContent = 'Log copiado';
+  } catch (erro) {
+    baixarTexto(texto);
+    aviso.textContent = 'Não foi possível copiar: baixado como arquivo .txt';
+  }
+}
 
 const $ = (id) => document.getElementById(id);
 
@@ -352,6 +544,18 @@ $('btn-pausar').addEventListener('click', pausar);
 $('btn-avancar').addEventListener('click', avancar);
 $('btn-reiniciar').addEventListener('click', reiniciar);
 $('velocidade').addEventListener('input', atualizarTextoVelocidade);
+$('btn-copiar-log').addEventListener('click', copiarLog);
+const botoesAba = Array.from(document.querySelectorAll('.aba'));
+botoesAba.forEach((b, i) => {
+  b.addEventListener('click', () => trocarAba(b.dataset.a));
+  b.addEventListener('keydown', (e) => {
+    if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+    const passo = e.key === 'ArrowRight' ? 1 : botoesAba.length - 1;
+    const prox = botoesAba[(i + passo) % botoesAba.length];
+    trocarAba(prox.dataset.a);
+    prox.focus();
+  });
+});
 
 document.addEventListener('simulador:aberto', () => desenharGrafo(app));
 atualizarTextoVelocidade();

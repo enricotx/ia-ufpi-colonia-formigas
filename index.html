@@ -111,13 +111,13 @@
         </div>
 
         <div class="painel">
-          <div class="abas">
-            <button type="button" class="aba ativa" data-a="h">Histórico</button>
-            <button type="button" class="aba" data-a="c">Construção das rotas</button>
-            <button type="button" class="aba" data-a="f">Feromônio por aresta</button>
+          <div class="abas" role="tablist" aria-label="Resultados da execução">
+            <button type="button" class="aba ativa" data-a="h" id="aba-h" role="tab" aria-selected="true" aria-controls="ab-h" tabindex="0">Histórico</button>
+            <button type="button" class="aba" data-a="c" id="aba-c" role="tab" aria-selected="false" aria-controls="ab-c" tabindex="-1">Construção das rotas</button>
+            <button type="button" class="aba" data-a="f" id="aba-f" role="tab" aria-selected="false" aria-controls="ab-f" tabindex="-1">Feromônio por aresta</button>
           </div>
 
-          <div class="conteudo ativa" id="ab-h">
+          <div class="conteudo ativa" id="ab-h" role="tabpanel" aria-labelledby="aba-h">
             <div class="grafico-caixa"><canvas id="grafico-historico"></canvas></div>
             <div class="rolagem">
               <table class="tabela-hist">
@@ -127,8 +127,8 @@
             </div>
           </div>
 
-          <div class="conteudo" id="ab-c"><div id="log-construcao"></div></div>
-          <div class="conteudo" id="ab-f"><div class="rolagem"><div id="log-feromonio"></div></div></div>
+          <div class="conteudo" id="ab-c" role="tabpanel" aria-labelledby="aba-c"><div id="log-construcao"></div></div>
+          <div class="conteudo" id="ab-f" role="tabpanel" aria-labelledby="aba-f"><div class="rolagem"><div id="log-feromonio"></div></div></div>
 
           <div class="copiar">
             <button type="button" class="link" id="btn-copiar-log">Copiar log</button>
