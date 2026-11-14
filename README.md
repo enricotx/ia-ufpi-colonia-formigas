@@ -8,8 +8,8 @@ Atividade Prática de Inteligência Artificial — UFPI, período 2026.2
 
 ## Autores
 
-- Enrico Teixeira — [matrícula]
-- João Pedro Moura — [matrícula]
+- Enrico da Rocha Santos Teixeira — 20239046134
+- João Pedro de Sousa Moura — 20249022038
 
 ## Problema
 
