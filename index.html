@@ -41,7 +41,7 @@
         <div class="painel">
           <h2>Vértices</h2>
           <table>
-            <thead><tr><th style="width:56px">Nome</th><th>x</th><th>y</th><th></th></tr></thead>
+            <thead><tr><th style="width:56px">Nome</th><th>x</th><th>y</th><th><span class="so-leitor">Remover</span></th></tr></thead>
             <tbody id="tvert"></tbody>
           </table>
           <div class="linha-botoes">
@@ -53,7 +53,7 @@
 
         <div class="painel">
           <h2>Parâmetros</h2>
-          <div class="resumo-erros" id="resumo-erros" hidden></div>
+          <div class="resumo-erros" id="resumo-erros" aria-live="polite" hidden></div>
           <div class="campos">
             <div class="campo"><label for="c-formigas">Formigas <small>1 a 100</small></label><input type="text" inputmode="decimal" id="c-formigas" value="10"><div class="erro"></div></div>
             <div class="campo"><label for="c-iteracoes">Iterações <small>1 a 200</small></label><input type="text" inputmode="decimal" id="c-iteracoes" value="30"><div class="erro"></div></div>
@@ -73,7 +73,7 @@
             <button type="button" class="b" id="btn-avancar">Avançar uma iteração</button>
             <button type="button" class="b largo" id="btn-reiniciar">Reiniciar</button>
           </div>
-          <div class="vel"><label for="velocidade">Velocidade</label> <input type="range" id="velocidade" min="1" max="10" value="6"> <span>rápida</span></div>
+          <div class="vel"><label for="velocidade">Velocidade</label> <input type="range" id="velocidade" min="1" max="10" value="6"> <span id="vel-texto"></span></div>
         </div>
       </aside>
 

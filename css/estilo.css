@@ -127,3 +127,6 @@ summary { cursor:pointer; font-weight:600; }
 
 /* rodapé */
 .rodape { text-align:center; color:var(--texto2); font-size:.85rem; padding:0 24px 32px; }
+
+/* Texto só para leitores de tela */
+.so-leitor { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
