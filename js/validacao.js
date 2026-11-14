@@ -16,6 +16,23 @@ export function lerNumero(texto, { nome, min = -Infinity, max = Infinity,
   return { valor };
 }
 
+/** Enunciado 1, 3 e 6.5: regras que dependem de todos os vértices juntos.
+ *  vertices = [{ id, x, y }] já lidos. Devolve a lista de mensagens de erro (vazia = tudo certo). */
+export function validarVertices(vertices) {
+  const erros = [];
+  if (vertices.length < 4) erros.push('Vértices: cadastre pelo menos 4 vértices.');
+  if (vertices.length > 12) erros.push('Vértices: cadastre no máximo 12 vértices.');
+  for (let i = 0; i < vertices.length; i++) {
+    for (let j = i + 1; j < vertices.length; j++) {
+      if (vertices[i].id === vertices[j].id)
+        erros.push(`Vértices: o identificador ${vertices[i].id} está repetido.`);
+      if (vertices[i].x === vertices[j].x && vertices[i].y === vertices[j].y)
+        erros.push(`Vértices: ${vertices[i].id} e ${vertices[j].id} têm as mesmas coordenadas.`);
+    }
+  }
+  return erros;
+}
+
 export function lerTexto(texto, { nome }) {
   const valor = String(texto ?? '').trim();
   if (valor === '') return { erro: `${nome}: preencha este campo.` };
