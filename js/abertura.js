@@ -98,17 +98,22 @@ if (!reduzir) {
 }
 
 // Iniciar: some com fade, esconde a abertura, para a animação e abre o simulador.
-document.getElementById('btn-iniciar').addEventListener('click', () => {
-  let feito = false;
-  const concluir = () => {
-    if (feito) return;
-    feito = true;
-    abertura.hidden = true;
-    parar();
-    document.getElementById('simulador').hidden = false;
-    document.dispatchEvent(new CustomEvent('simulador:aberto'));
-  };
+const btnIniciar = document.getElementById('btn-iniciar');
+let aberto = false; // garante que a abertura só se fecha uma vez
+function concluir() {
+  if (aberto) return;
+  aberto = true;
+  abertura.hidden = true;
+  parar();
+  document.getElementById('simulador').hidden = false;
+  document.dispatchEvent(new CustomEvent('simulador:aberto'));
+}
+btnIniciar.addEventListener('click', () => {
+  if (btnIniciar.disabled) return;
+  btnIniciar.disabled = true;
   abertura.classList.add('some');
-  abertura.addEventListener('transitionend', concluir, { once: true });
+  abertura.addEventListener('transitionend', (e) => {
+    if (e.target === abertura && e.propertyName === 'opacity') concluir();
+  });
   setTimeout(concluir, 500); // reserva caso a transição não dispare
 });
