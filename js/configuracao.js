@@ -29,9 +29,17 @@ export const INSTANCIA_TESTE = {
   campos: { formigas: '10', iteracoes: '30', alfa: '1', beta: '2', rho: '50', tau0: '1', q: '14', semente: '42' }
 };
 
+// Rejeita "1.000" e "10.000" (ponto de milhar), que seriam lidos como 1 e 10; senão usa lerNumero.
+function lerNumeroBr(texto, regras) {
+  if (/^\d{1,3}(\.\d{3})+$/.test(String(texto ?? '').trim())) {
+    return { erro: regras.nome + ': use vírgula para decimais, sem ponto de milhar.' };
+  }
+  return lerNumero(texto, regras);
+}
+
 // Lê um campo numérico. Se der certo devolve o valor; se não, guarda a mensagem em errosCampos[chave].
 function lerCampo(entrada, chave, regras, errosCampos) {
-  const r = lerNumero(entrada.campos[chave], regras);
+  const r = lerNumeroBr(entrada.campos[chave], regras);
   if (r.erro) {
     errosCampos[chave] = r.erro;
     return null;
@@ -50,12 +58,12 @@ function lerVertice(bruto, linha, errosVertices) {
     errosVertices.push({ linha: linha, coluna: 'id', mensagem: nome.erro });
     ok = false;
   }
-  const x = lerNumero(bruto.x, { nome: rotulo + ': x', min: 0, max: 1000, casas: 2 });
+  const x = lerNumeroBr(bruto.x, { nome: rotulo + ': x', min: 0, max: 1000, casas: 2 });
   if (x.erro) {
     errosVertices.push({ linha: linha, coluna: 'x', mensagem: x.erro });
     ok = false;
   }
-  const y = lerNumero(bruto.y, { nome: rotulo + ': y', min: 0, max: 1000, casas: 2 });
+  const y = lerNumeroBr(bruto.y, { nome: rotulo + ': y', min: 0, max: 1000, casas: 2 });
   if (y.erro) {
     errosVertices.push({ linha: linha, coluna: 'y', mensagem: y.erro });
     ok = false;

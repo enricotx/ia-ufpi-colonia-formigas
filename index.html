@@ -31,7 +31,8 @@
         <div class="disc">Inteligência Artificial · UFPI 2026.2 · Enrico Teixeira e João Pedro Moura</div>
       </div>
       <div class="espaco"></div>
-      <span class="status" id="status" role="status">Pronto para executar</span>
+      <span class="status" id="status">Pronto para executar</span>
+      <div class="so-leitor" id="anuncio-modo" aria-live="polite"></div>
       <a class="pilula contorno pequena" href="https://github.com/enricotx/ia-ufpi-colonia-formigas" target="_blank" rel="noopener">Repositório no GitHub ↗</a>
     </header>
 
@@ -44,6 +45,8 @@
             <thead><tr><th style="width:56px">Nome</th><th>x</th><th>y</th><th><span class="so-leitor">Remover</span></th></tr></thead>
             <tbody id="tvert"></tbody>
           </table>
+          <div class="dica-vertices" id="dica-vertices">4 a 12 vértices</div>
+          <div class="resumo-erros" id="erros-vertices" aria-live="polite" hidden></div>
           <div class="linha-botoes">
             <button type="button" class="link" id="btn-add-vertice">+ Adicionar vértice</button>
             <button type="button" class="link" id="btn-instancia-teste">Carregar instância de teste (6.1)</button>

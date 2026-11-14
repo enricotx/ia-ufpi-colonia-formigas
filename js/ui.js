@@ -9,6 +9,8 @@ import { atualizarReferencia } from './escala.js';
 import { formatarDistancia, formatarDecimal, formatarRota } from './formato.js';
 import { resumoIteracao, textoExecucao, deveBaixar } from './log.js';
 
+const $ = (id) => document.getElementById(id);
+
 const MIN_VERTICES = 4;
 const MAX_VERTICES = 12;
 const CAMPOS = ['formigas', 'iteracoes', 'alfa', 'beta', 'rho', 'tau0', 'q', 'semente'];
@@ -26,7 +28,7 @@ const app = {
   temporizador: null
 };
 
-// Ganchos das tarefas seguintes (grafo, métricas, histórico, logs). Por enquanto não fazem nada.
+// O que a tabela do histórico já mostra (para só acrescentar linhas novas).
 let historicoMostrado = { historico: null, linhas: 0 }; // o que a tabela já tem (para só acrescentar)
 
 function celula(texto) {
@@ -250,7 +252,7 @@ async function copiarLog() {
   const botao = $('btn-copiar-log');
   botao.disabled = true;
   aviso.textContent = 'Gerando log…';
-  await new Promise((r) => setTimeout(r, 0)); // deixa a mensagem aparecer antes de montar o texto
+  await new Promise((r) => requestAnimationFrame(() => setTimeout(r, 0))); // deixa a mensagem aparecer antes de montar o texto
   try {
     const texto = textoExecucao(app.eventosPorIteracao, app.parametros.vertices);
     if (deveBaixar(texto)) {
@@ -265,12 +267,12 @@ async function copiarLog() {
       baixarTexto(texto);
       aviso.textContent = 'Não foi possível copiar: baixado como arquivo .txt';
     }
+  } catch (e) {
+    aviso.textContent = 'Não foi possível gerar o log.';
   } finally {
     botao.disabled = false;
   }
 }
-
-const $ = (id) => document.getElementById(id);
 
 // ---------- Tabela de vértices e depósito ----------
 
@@ -299,12 +301,15 @@ function montarTabela() {
     bx.textContent = '×';
     bx.setAttribute('aria-label', 'Remover vértice ' + (i + 1));
     bx.disabled = app.entrada.vertices.length <= MIN_VERTICES;
+    if (bx.disabled) bx.title = 'Mínimo de 4 vértices';
     bx.addEventListener('click', () => removerVertice(i));
     tdx.appendChild(bx);
     tr.appendChild(tdx);
     corpo.appendChild(tr);
   });
-  $('btn-add-vertice').disabled = app.entrada.vertices.length >= MAX_VERTICES;
+  const cheio = app.entrada.vertices.length >= MAX_VERTICES;
+  $('btn-add-vertice').disabled = cheio;
+  $('btn-add-vertice').title = cheio ? 'Máximo de 12 vértices' : '';
   montarSelecaoDeposito();
 }
 
@@ -397,20 +402,33 @@ function pintarErros(r) {
     });
   }
   const indice = { id: 0, x: 1, y: 2 };
-  for (const e of r.errosVertices) {
+  // Células com erro: as das mensagens de vértice mais as de nome ou coordenadas repetidos.
+  const marcadas = []; // { linha, coluna, mensagem }
+  for (const e of r.errosVertices) marcadas.push(e);
+  for (const m of celulasRepetidas()) marcadas.push(m);
+  const jaMarcadas = new Set();
+  for (const e of marcadas) {
     const inp = linhas[e.linha].querySelectorAll('input')[indice[e.coluna]];
     inp.classList.add('invalido');
     inp.title = e.mensagem;
     inp.setAttribute('aria-invalid', 'true');
+    jaMarcadas.add(e.linha + ':' + e.coluna);
   }
-  // Resumo no topo dos parâmetros: contagem e, em texto visível, cada mensagem de vértice e erro geral.
-  const total = Object.keys(r.errosCampos).length + r.errosVertices.length;
-  const resumo = $('resumo-erros');
+  // Resumo dos parâmetros: só erros de campos de parâmetro.
+  escreverResumo($('resumo-erros'), Object.keys(r.errosCampos).length, []);
+  // Resumo dos vértices: contagem de células e, em texto visível, cada mensagem.
+  const mensagens = [];
+  for (const e of r.errosVertices) mensagens.push(e.mensagem);
+  for (const g of r.errosGerais) mensagens.push(g);
+  escreverResumo($('erros-vertices'), jaMarcadas.size, mensagens);
+}
+
+// Escreve no resumo a contagem de campos inválidos (se houver) e as mensagens.
+function escreverResumo(resumo, total, mensagens) {
   resumo.innerHTML = '';
   const linhasResumo = [];
   if (total > 0) linhasResumo.push(total === 1 ? '1 campo inválido' : total + ' campos inválidos');
-  for (const e of r.errosVertices) linhasResumo.push(e.mensagem);
-  for (const g of r.errosGerais) linhasResumo.push(g);
+  for (const m of mensagens) linhasResumo.push(m);
   linhasResumo.forEach((texto, i) => {
     const d = document.createElement('div');
     if (i > 0) d.style.fontWeight = '400';
@@ -418,6 +436,34 @@ function pintarErros(r) {
     resumo.appendChild(d);
   });
   resumo.hidden = linhasResumo.length === 0;
+}
+
+// Acha as células de nomes repetidos (mesmo nome sem espaços) e de coordenadas repetidas (x e y iguais).
+function celulasRepetidas() {
+  const achadas = [];
+  const vs = app.entrada.vertices;
+  for (let i = 0; i < vs.length; i++) {
+    const idI = vs[i].id.trim();
+    const xI = Number(vs[i].x.replace(',', '.'));
+    const yI = Number(vs[i].y.replace(',', '.'));
+    const numerosI = vs[i].x.trim() !== '' && vs[i].y.trim() !== '' && !isNaN(xI) && !isNaN(yI);
+    let nomeRepetido = false;
+    let coordRepetida = false;
+    for (let j = 0; j < vs.length; j++) {
+      if (j === i) continue;
+      if (idI !== '' && idI === vs[j].id.trim()) nomeRepetido = true;
+      const xJ = Number(vs[j].x.replace(',', '.'));
+      const yJ = Number(vs[j].y.replace(',', '.'));
+      const numerosJ = vs[j].x.trim() !== '' && vs[j].y.trim() !== '' && !isNaN(xJ) && !isNaN(yJ);
+      if (numerosI && numerosJ && xI === xJ && yI === yJ) coordRepetida = true;
+    }
+    if (nomeRepetido) achadas.push({ linha: i, coluna: 'id', mensagem: 'Nome repetido' });
+    if (coordRepetida) {
+      achadas.push({ linha: i, coluna: 'x', mensagem: 'Coordenadas repetidas' });
+      achadas.push({ linha: i, coluna: 'y', mensagem: 'Coordenadas repetidas' });
+    }
+  }
+  return achadas;
 }
 
 // ---------- Execução ----------
@@ -515,6 +561,8 @@ function avancar() {
 
 // ---------- Tela ----------
 
+let modoAnunciado = null;
+
 function renderizar() {
   const b = botoesPorEstado(app.modo);
   $('btn-executar').disabled = !b.executar;
@@ -525,6 +573,11 @@ function renderizar() {
   const status = $('status');
   status.textContent = textoStatus(app.modo, app.estado.iteracao, total);
   status.className = 'status ' + app.modo;
+  // Só anuncia ao leitor de tela quando o modo muda (não a cada iteração).
+  if (app.modo !== modoAnunciado) {
+    modoAnunciado = app.modo;
+    $('anuncio-modo').textContent = status.textContent;
+  }
   desenharGrafo(app);
   atualizarMetricasEHistorico(app);
 }

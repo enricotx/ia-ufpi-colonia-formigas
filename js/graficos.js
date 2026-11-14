@@ -238,6 +238,7 @@ function desenharHistorico(historico) {
         ]
       },
       options: {
+        locale: 'pt-BR',
         responsive: true,
         maintainAspectRatio: false,
         animation: false,
