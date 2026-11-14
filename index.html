@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Colônia de Formigas — Rota de entregas</title>
+  <link rel="stylesheet" href="css/estilo.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <header class="cabecalho">
+    <p class="disciplina">Inteligência Artificial — UFPI 2026.2</p>
+    <h1>Atividade Prática: Colônia de Formigas (Ant System)</h1>
+    <p class="meta">
+      Autores: [Nome Completo], [Nome Completo] ·
+      <a href="https://github.com/enricotx/ia-ufpi-colonia-formigas" target="_blank" rel="noopener">Repositório no GitHub</a>
+    </p>
+  </header>
+
+  <main class="layout">
+    <!-- Coluna de configuração -->
+    <section>
+      <div class="painel" id="painel-vertices">
+        <h2>Vértices</h2>
+        <!-- TODO: tabela editável (id, x, y entre 0 e 1.000), adicionar/remover (4 a 12), depósito -->
+      </div>
+
+      <div class="painel" id="painel-parametros">
+        <h2>Parâmetros</h2>
+        <!-- TODO: formigas, iterações, α, β, ρ (%), τ₀, Q, semente -->
+      </div>
+
+      <div class="painel">
+        <div class="controles">
+          <button id="btn-executar" class="primario" disabled>Executar</button>
+          <button id="btn-pausar" disabled>Pausar</button>
+          <button id="btn-avancar" disabled>Avançar uma iteração</button>
+          <button id="btn-reiniciar" disabled>Reiniciar</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Coluna de resultados -->
+    <section>
+      <div class="status" id="status">Em construção</div>
+
+      <div class="metricas">
+        <div class="metrica"><div class="rotulo">Iteração atual</div><div class="valor" id="m-iteracao">—</div></div>
+        <div class="metrica"><div class="rotulo">Menor distância da iteração</div><div class="valor" id="m-menor">—</div></div>
+        <div class="metrica"><div class="rotulo">Média das formigas</div><div class="valor" id="m-media">—</div></div>
+        <div class="metrica"><div class="rotulo">Melhor distância acumulada</div><div class="valor" id="m-melhor">ainda não calculada</div></div>
+      </div>
+
+      <div class="painel" id="painel-grafo" style="margin-top:16px">
+        <h2>Grafo e feromônio</h2>
+        <!-- TODO: SVG do grafo, legenda, consulta de arestas, melhor rota e sua sequência -->
+      </div>
+
+      <div class="painel" id="painel-historico">
+        <h2>Histórico por iteração</h2>
+      </div>
+
+      <div class="painel" id="painel-logs">
+        <h2>Construção das rotas e atualização do feromônio</h2>
+      </div>
+    </section>
+  </main>
+
+  <footer class="rodape">
+    Código-fonte: <a href="https://github.com/enricotx/ia-ufpi-colonia-formigas">github.com/enricotx/ia-ufpi-colonia-formigas</a>
+    · <a href="testes.html">Testes de validação</a>
+  </footer>
+
+  <script type="module" src="js/ui.js"></script>
+</body>
+</html>
