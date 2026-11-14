@@ -160,14 +160,21 @@ function pintarErros(r) {
     inp.title = e.mensagem;
     inp.setAttribute('aria-invalid', 'true');
   }
-  // Resumo no topo dos parâmetros: contagem + erros gerais.
+  // Resumo no topo dos parâmetros: contagem e, em texto visível, cada mensagem de vértice e erro geral.
   const total = Object.keys(r.errosCampos).length + r.errosVertices.length;
-  const partes = [];
-  if (total > 0) partes.push(total === 1 ? '1 campo inválido' : total + ' campos inválidos');
-  for (const g of r.errosGerais) partes.push(g);
   const resumo = $('resumo-erros');
-  resumo.textContent = partes.join(' · ');
-  resumo.hidden = partes.length === 0;
+  resumo.innerHTML = '';
+  const linhasResumo = [];
+  if (total > 0) linhasResumo.push(total === 1 ? '1 campo inválido' : total + ' campos inválidos');
+  for (const e of r.errosVertices) linhasResumo.push(e.mensagem);
+  for (const g of r.errosGerais) linhasResumo.push(g);
+  linhasResumo.forEach((texto, i) => {
+    const d = document.createElement('div');
+    if (i > 0) d.style.fontWeight = '400';
+    d.textContent = texto;
+    resumo.appendChild(d);
+  });
+  resumo.hidden = linhasResumo.length === 0;
 }
 
 // ---------- Execução ----------
@@ -242,6 +249,7 @@ function volta() {
 }
 
 function executar() {
+  pararTemporizador(); // garantia: nunca dois laços ao mesmo tempo
   app.modo = 'executando';
   volta();
 }
