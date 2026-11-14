@@ -4,6 +4,8 @@ import { criarRng } from './prng.js';
 import * as nucleo from './nucleo.js';
 import { CENARIO_INICIAL, INSTANCIA_TESTE, lerConfiguracao, proximoId, depositoValido } from './configuracao.js';
 import { botoesPorEstado, textoStatus, modoAposEdicao } from './estados.js';
+import { desenharGrafo } from './graficos.js';
+import { atualizarReferencia } from './escala.js';
 
 const MIN_VERTICES = 4;
 const MAX_VERTICES = 12;
@@ -18,11 +20,11 @@ const app = {
   rng: null,
   estado: null,
   eventosPorIteracao: [],
+  escala: { ref: 1, mudouEm: null },           // referência de espessura do grafo (só cresce)
   temporizador: null
 };
 
 // Ganchos das tarefas seguintes (grafo, métricas, histórico, logs). Por enquanto não fazem nada.
-function desenharGrafo(app) {}
 function atualizarMetricasEHistorico(app) {}
 function registrarEventos(app, eventos) {}
 function limparLogs() {}
@@ -218,6 +220,7 @@ function reiniciar() {
   app.estado = nucleo.inicializar(app.parametros);
   app.rng = criarRng(app.parametros.semente);
   app.eventosPorIteracao = [];
+  app.escala = { ref: app.parametros.tau0, mudouEm: null };
   limparLogs();
   app.modo = 'pronto';
   renderizar();
@@ -233,6 +236,10 @@ function intervaloMs() {
 function avancarUma() {
   const r = nucleo.passo(app.estado, app.parametros, app.rng);
   app.eventosPorIteracao.push(r.eventos);
+  // A referência da escala é atualizada uma vez por iteração, aqui, e nunca ao redesenhar.
+  const nova = atualizarReferencia(app.escala.ref, app.estado.tau);
+  app.escala.ref = nova.ref;
+  if (nova.mudou) app.escala.mudouEm = app.estado.iteracao;
   registrarEventos(app, r.eventos);
   if (app.estado.iteracao >= app.parametros.iteracoes) {
     pararTemporizador();
@@ -305,6 +312,7 @@ $('btn-avancar').addEventListener('click', avancar);
 $('btn-reiniciar').addEventListener('click', reiniciar);
 $('velocidade').addEventListener('input', atualizarTextoVelocidade);
 
+document.addEventListener('simulador:aberto', () => desenharGrafo(app));
 atualizarTextoVelocidade();
 preencherTela();
 reiniciar();
