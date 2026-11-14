@@ -214,6 +214,47 @@ function atualizarMelhorRota(app) {
     ', achada na iteração ' + iteracaoDaMelhor(e.historico);
 }
 
-export { desenharGrafo };
+// ---------- Gráfico do histórico (Chart.js, carregado como global) ----------
 
-// TODO (tarefa 6): gráfico do histórico: melhor acumulado, melhor da iteração, média
+let grafico = null;
+
+// Cria o gráfico uma vez; depois só troca os dados. Sem Chart (CDN fora do ar), não faz nada.
+function desenharHistorico(historico) {
+  if (typeof Chart === 'undefined') return;
+  const rotulos = historico.map((h) => h.iteracao);
+  const serie = (campo) => historico.map((h) => h[campo]); // null na iteração 0: Chart.js pula o ponto
+  if (grafico === null) {
+    const tela = document.getElementById('grafico-historico');
+    if (!tela) return;
+    const base = { pointRadius: 2, tension: 0, spanGaps: false };
+    grafico = new Chart(tela, {
+      type: 'line',
+      data: {
+        labels: rotulos,
+        datasets: [
+          { ...base, label: 'Melhor acumulada', data: serie('melhorAcumulado'), borderColor: '#d9480f', backgroundColor: '#d9480f', borderWidth: 3 },
+          { ...base, label: 'Menor da iteração', data: serie('menorIteracao'), borderColor: '#6e5f4c', backgroundColor: '#6e5f4c', borderWidth: 2, borderDash: [6, 4] },
+          { ...base, label: 'Média', data: serie('mediaIteracao'), borderColor: '#b07a2a', backgroundColor: '#b07a2a', borderWidth: 2 }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: false,
+        plugins: { legend: { display: true } },
+        scales: {
+          x: { title: { display: true, text: 'iteração' } },
+          y: { title: { display: true, text: 'distância' } }
+        }
+      }
+    });
+    return;
+  }
+  grafico.data.labels = rotulos;
+  grafico.data.datasets[0].data = serie('melhorAcumulado');
+  grafico.data.datasets[1].data = serie('menorIteracao');
+  grafico.data.datasets[2].data = serie('mediaIteracao');
+  grafico.update('none');
+}
+
+export { desenharGrafo, desenharHistorico };

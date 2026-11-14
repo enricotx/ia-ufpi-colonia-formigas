@@ -4,8 +4,9 @@ import { criarRng } from './prng.js';
 import * as nucleo from './nucleo.js';
 import { CENARIO_INICIAL, INSTANCIA_TESTE, lerConfiguracao, proximoId, depositoValido } from './configuracao.js';
 import { botoesPorEstado, textoStatus, modoAposEdicao } from './estados.js';
-import { desenharGrafo } from './graficos.js';
+import { desenharGrafo, desenharHistorico } from './graficos.js';
 import { atualizarReferencia } from './escala.js';
+import { formatarDistancia } from './formato.js';
 
 const MIN_VERTICES = 4;
 const MAX_VERTICES = 12;
@@ -25,7 +26,47 @@ const app = {
 };
 
 // Ganchos das tarefas seguintes (grafo, métricas, histórico, logs). Por enquanto não fazem nada.
-function atualizarMetricasEHistorico(app) {}
+let historicoMostrado = { historico: null, linhas: 0 }; // o que a tabela já tem (para só acrescentar)
+
+function celula(texto) {
+  const td = document.createElement('td');
+  td.textContent = texto;
+  return td;
+}
+
+// Métricas do topo, tabela (só acrescenta linhas novas) e gráfico do histórico.
+function atualizarMetricasEHistorico(app) {
+  const hist = app.estado.historico;
+  const ultimo = hist[hist.length - 1];
+  const total = app.parametros.iteracoes;
+  $('m-iteracao').innerHTML = '';
+  $('m-iteracao').append(String(ultimo.iteracao) + ' ');
+  const de = document.createElement('small');
+  de.textContent = 'de ' + total;
+  $('m-iteracao').append(de);
+  $('m-menor').textContent = formatarDistancia(ultimo.menorIteracao);
+  $('m-media').textContent = formatarDistancia(ultimo.mediaIteracao);
+  $('m-melhor').textContent = ultimo.melhorAcumulado === null ? 'ainda não calculada' : formatarDistancia(ultimo.melhorAcumulado);
+
+  const corpo = $('tabela-historico');
+  if (historicoMostrado.historico !== hist || hist.length < historicoMostrado.linhas) {
+    corpo.innerHTML = ''; // reinício: refaz do zero
+    historicoMostrado = { historico: hist, linhas: 0 };
+  }
+  for (let i = historicoMostrado.linhas; i < hist.length; i++) {
+    const h = hist[i];
+    const tr = document.createElement('tr');
+    tr.append(
+      celula(String(h.iteracao)),
+      celula(formatarDistancia(h.menorIteracao)),
+      celula(formatarDistancia(h.mediaIteracao)),
+      celula(h.melhorAcumulado === null ? 'ainda não calculada' : formatarDistancia(h.melhorAcumulado))
+    );
+    corpo.append(tr);
+  }
+  historicoMostrado.linhas = hist.length;
+  desenharHistorico(hist);
+}
 function registrarEventos(app, eventos) {}
 function limparLogs() {}
 
