@@ -8,69 +8,143 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
 <body>
-  <header class="cabecalho">
-    <p class="disciplina">Inteligência Artificial — UFPI 2026.2</p>
-    <h1>Atividade Prática: Colônia de Formigas (Ant System)</h1>
-    <p class="meta">
-      Autores: [Nome Completo], [Nome Completo] ·
-      <a href="https://github.com/enricotx/ia-ufpi-colonia-formigas" target="_blank" rel="noopener">Repositório no GitHub</a>
-    </p>
-  </header>
-
-  <main class="layout">
-    <!-- Coluna de configuração -->
-    <section>
-      <div class="painel" id="painel-vertices">
-        <h2>Vértices</h2>
-        <!-- TODO: tabela editável (id, x, y entre 0 e 1.000), adicionar/remover (4 a 12), depósito -->
+  <!-- Tela de abertura: ocupa a janela inteira, formigas passeando atrás do texto -->
+  <section id="abertura">
+    <canvas id="abertura-canvas" aria-hidden="true"></canvas>
+    <div class="capa">
+      <div class="disc">Inteligência Artificial · UFPI 2026.2</div>
+      <h1 class="nome">Colônia de Formigas</h1>
+      <div class="var">Ant System · rota de entregas</div>
+      <div class="capa-botoes">
+        <button type="button" id="btn-iniciar" class="pilula cheia">Iniciar</button>
+        <a id="btn-repo-abertura" class="pilula contorno" href="https://github.com/enricotx/ia-ufpi-colonia-formigas" target="_blank" rel="noopener">Ver repositório ↗</a>
       </div>
+      <div class="autores">Enrico Teixeira e João Pedro Moura</div>
+    </div>
+  </section>
 
-      <div class="painel" id="painel-parametros">
-        <h2>Parâmetros</h2>
-        <!-- TODO: formigas, iterações, α, β, ρ (%), τ₀, Q, semente -->
+  <!-- Simulador: aparece depois do Iniciar -->
+  <section id="simulador" hidden>
+    <header class="topo">
+      <div>
+        <h1 class="titulo">Colônia de Formigas</h1>
+        <div class="disc">Inteligência Artificial · UFPI 2026.2 · Enrico Teixeira e João Pedro Moura</div>
       </div>
+      <div class="espaco"></div>
+      <span class="status" id="status" role="status">Pronto para executar</span>
+      <a class="pilula contorno pequena" href="https://github.com/enricotx/ia-ufpi-colonia-formigas" target="_blank" rel="noopener">Repositório no GitHub ↗</a>
+    </header>
 
-      <div class="painel">
-        <div class="controles">
-          <button id="btn-executar" class="primario" disabled>Executar</button>
-          <button id="btn-pausar" disabled>Pausar</button>
-          <button id="btn-avancar" disabled>Avançar uma iteração</button>
-          <button id="btn-reiniciar" disabled>Reiniciar</button>
+    <main class="layout">
+      <!-- Coluna esquerda: configuração -->
+      <aside>
+        <div class="painel">
+          <h2>Vértices</h2>
+          <table>
+            <thead><tr><th style="width:56px">Nome</th><th>x</th><th>y</th><th></th></tr></thead>
+            <tbody id="tvert"></tbody>
+          </table>
+          <div class="linha-botoes">
+            <button type="button" class="link" id="btn-add-vertice">+ Adicionar vértice</button>
+            <button type="button" class="link" id="btn-instancia-teste">Carregar instância de teste (6.1)</button>
+          </div>
+          <div class="deposito"><label for="sel-deposito">Depósito:</label> <select id="sel-deposito"></select></div>
         </div>
-      </div>
-    </section>
 
-    <!-- Coluna de resultados -->
-    <section>
-      <div class="status" id="status">Em construção</div>
+        <div class="painel">
+          <h2>Parâmetros</h2>
+          <div class="resumo-erros" id="resumo-erros" hidden></div>
+          <div class="campos">
+            <div class="campo"><label for="c-formigas">Formigas <small>1 a 100</small></label><input type="text" inputmode="decimal" id="c-formigas" value="10"><div class="erro"></div></div>
+            <div class="campo"><label for="c-iteracoes">Iterações <small>1 a 200</small></label><input type="text" inputmode="decimal" id="c-iteracoes" value="30"><div class="erro"></div></div>
+            <div class="campo"><label for="c-alfa">α <small>feromônio</small></label><input type="text" inputmode="decimal" id="c-alfa" value="1"><div class="erro"></div></div>
+            <div class="campo"><label for="c-beta">β <small>distância</small></label><input type="text" inputmode="decimal" id="c-beta" value="2"><div class="erro"></div></div>
+            <div class="campo"><label for="c-rho">ρ <small>evaporação, %</small></label><input type="text" inputmode="decimal" id="c-rho" value="50"><div class="erro"></div></div>
+            <div class="campo"><label for="c-tau0">τ₀ <small>inicial</small></label><input type="text" inputmode="decimal" id="c-tau0" value="1"><div class="erro"></div></div>
+            <div class="campo"><label for="c-q">Q <small>depósito</small></label><input type="text" inputmode="decimal" id="c-q" value="1000"><div class="erro"></div></div>
+            <div class="campo"><label for="c-semente">Semente</label><input type="text" inputmode="decimal" id="c-semente" value="42"><div class="erro"></div></div>
+          </div>
+        </div>
 
-      <div class="metricas">
-        <div class="metrica"><div class="rotulo">Iteração atual</div><div class="valor" id="m-iteracao">—</div></div>
-        <div class="metrica"><div class="rotulo">Menor distância da iteração</div><div class="valor" id="m-menor">—</div></div>
-        <div class="metrica"><div class="rotulo">Média das formigas</div><div class="valor" id="m-media">—</div></div>
-        <div class="metrica"><div class="rotulo">Melhor distância acumulada</div><div class="valor" id="m-melhor">ainda não calculada</div></div>
-      </div>
+        <div class="painel">
+          <div class="botoes">
+            <button type="button" class="b primario" id="btn-executar">Executar</button>
+            <button type="button" class="b" id="btn-pausar" disabled>Pausar</button>
+            <button type="button" class="b" id="btn-avancar">Avançar uma iteração</button>
+            <button type="button" class="b largo" id="btn-reiniciar">Reiniciar</button>
+          </div>
+          <div class="vel"><label for="velocidade">Velocidade</label> <input type="range" id="velocidade" min="1" max="10" value="6"> <span>rápida</span></div>
+        </div>
+      </aside>
 
-      <div class="painel" id="painel-grafo" style="margin-top:16px">
-        <h2>Grafo e feromônio</h2>
-        <!-- TODO: SVG do grafo, legenda, consulta de arestas, melhor rota e sua sequência -->
-      </div>
+      <!-- Coluna direita: resultados -->
+      <section>
+        <div class="metricas">
+          <div class="metrica"><div class="r">Iteração</div><div class="v" id="m-iteracao">—</div></div>
+          <div class="metrica"><div class="r">Menor distância da iteração</div><div class="v" id="m-menor">—</div></div>
+          <div class="metrica"><div class="r">Média das formigas</div><div class="v" id="m-media">—</div></div>
+          <div class="metrica melhor"><div class="r">Melhor distância acumulada</div><div class="v" id="m-melhor">ainda não calculada</div></div>
+        </div>
 
-      <div class="painel" id="painel-historico">
-        <h2>Histórico por iteração</h2>
-      </div>
+        <div class="painel">
+          <h2>Grafo e feromônio</h2>
+          <div class="grafo-area">
+            <svg id="grafo" viewBox="-60 -60 1120 1120" role="img" aria-label="Grafo dos vértices com o feromônio em cada aresta"></svg>
+            <div class="lado">
+              <h3>Legenda</h3>
+              <div class="legenda">
+                <div><span class="tr" style="border-top-width:1px"></span> pouco feromônio</div>
+                <div><span class="tr" style="border-top-width:7px"></span> muito feromônio</div>
+                <div><span class="tr" style="border-top:3px dashed var(--destaque)"></span> melhor rota</div>
+                <div><svg width="34" height="20" aria-hidden="true"><rect x="7" y="0" width="20" height="20" rx="4" fill="#2a1d10"/></svg> depósito</div>
+                <div><svg width="34" height="20" aria-hidden="true"><circle cx="17" cy="10" r="9" fill="#fff" stroke="#2a1d10" stroke-width="2"/></svg> ponto de entrega</div>
+              </div>
+              <p class="escala" id="legenda-escala"></p>
+              <div class="consulta" id="consulta"><span class="vazio">Passe o mouse numa aresta para ver a distância e o feromônio.</span></div>
+              <div class="rota">
+                <div class="r">Melhor rota encontrada</div>
+                <div class="seq" id="melhor-rota">ainda não calculada</div>
+                <div class="d" id="melhor-dist"></div>
+              </div>
+            </div>
+          </div>
+        </div>
 
-      <div class="painel" id="painel-logs">
-        <h2>Construção das rotas e atualização do feromônio</h2>
-      </div>
-    </section>
-  </main>
+        <div class="painel">
+          <div class="abas">
+            <button type="button" class="aba ativa" data-a="h">Histórico</button>
+            <button type="button" class="aba" data-a="c">Construção das rotas</button>
+            <button type="button" class="aba" data-a="f">Feromônio por aresta</button>
+          </div>
 
-  <footer class="rodape">
-    Código-fonte: <a href="https://github.com/enricotx/ia-ufpi-colonia-formigas">github.com/enricotx/ia-ufpi-colonia-formigas</a>
-    · <a href="testes.html">Testes de validação</a>
-  </footer>
+          <div class="conteudo ativa" id="ab-h">
+            <div class="grafico-caixa"><canvas id="grafico-historico"></canvas></div>
+            <div class="rolagem">
+              <table class="tabela-hist">
+                <thead><tr><th>Iteração</th><th>Menor</th><th>Média</th><th>Melhor acumulada</th></tr></thead>
+                <tbody id="tabela-historico"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="conteudo" id="ab-c"><div id="log-construcao"></div></div>
+          <div class="conteudo" id="ab-f"><div class="rolagem"><div id="log-feromonio"></div></div></div>
+
+          <div class="copiar">
+            <button type="button" class="link" id="btn-copiar-log">Copiar log</button>
+            <span class="aviso-log" id="aviso-log" role="status"></span>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="rodape">
+      Código-fonte: <a href="https://github.com/enricotx/ia-ufpi-colonia-formigas" target="_blank" rel="noopener">github.com/enricotx/ia-ufpi-colonia-formigas</a>
+      · <a href="testes.html">Testes de validação</a>
+    </footer>
+  </section>
 
   <script type="module" src="js/ui.js"></script>
+  <script type="module" src="js/abertura.js"></script>
 </body>
 </html>
